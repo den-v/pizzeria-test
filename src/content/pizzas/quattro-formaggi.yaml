@@ -1,0 +1,17 @@
+name: Quattro Formaggi
+category: white
+order: 1
+description: Four cheeses, no tomato — mozzarella, gorgonzola, parmesan and a local goat cheese, melted into one another.
+price30: 265
+price40: 365
+ingredients:
+  - Cream base
+  - Mozzarella
+  - Gorgonzola dolce
+  - Aged parmesan
+  - Goat cheese from Zolochiv
+photo: ../../assets/pizzas/quattro-formaggi/photo.svg
+photoAlt: Quattro formaggi white pizza with four melted cheeses
+labels:
+  - vegetarian
+available: true

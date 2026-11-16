@@ -1,0 +1,62 @@
+---
+// Upcoming dates the pizzeria is closed. Past dates are hidden (also in the
+// browser, so the list stays right between builds).
+import { getInfo, holidayList, formatDate } from '../lib/site';
+import { nowInLviv } from '../lib/time';
+
+const info = await getInfo();
+const today = nowInLviv().date;
+const upcoming = holidayList(info).filter((h) => h.date >= today);
+---
+
+{
+  upcoming.length > 0 && (
+    <div class="holidays" data-holiday-list>
+      <h3>Closed on</h3>
+      <ul>
+        {upcoming.map((h) => (
+          <li data-holiday-date={h.date}>
+            <time datetime={h.date}>{formatDate(h.date, { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}</time>
+            {h.label && <span>{h.label}</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+<style>
+  .holidays {
+    padding: var(--space-m);
+    background: var(--red-soft);
+    border-radius: var(--radius-s);
+  }
+  h3 {
+    font-size: 1.1rem;
+    margin-block-end: var(--space-xs);
+    color: var(--red-deep);
+  }
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.3rem;
+  }
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-s);
+    flex-wrap: wrap;
+  }
+  li[hidden],
+  .holidays[hidden] {
+    display: none;
+  }
+  time {
+    font-weight: 600;
+  }
+  span {
+    color: var(--muted);
+  }
+</style>

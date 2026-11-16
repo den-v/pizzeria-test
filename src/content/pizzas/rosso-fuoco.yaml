@@ -1,0 +1,19 @@
+name: Rosso Fuoco
+category: signature
+order: 2
+description: Fiery 'nduja, red onion and chilli, cooled down with a drizzle of wildflower honey from Zhovkva.
+price30: 275
+price40: 385
+ingredients:
+  - Tomato sauce
+  - Mozzarella
+  - Spicy 'nduja
+  - Red onion
+  - Fresh chilli
+  - Wildflower honey
+photo: ../../assets/pizzas/rosso-fuoco/photo.svg
+photoAlt: Rosso Fuoco pizza with 'nduja, red onion and a honey drizzle
+labels:
+  - spicy
+  - new
+available: true

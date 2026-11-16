@@ -1,0 +1,46 @@
+name: Forno Rosso
+tagline: Wood-fired pizza in the heart of old Lviv
+address: vul. Virmenska 14
+city: Lviv 79008, Ukraine
+phone: +380 67 412 30 18
+email: ciao@fornorosso.com.ua
+mapUrl: https://www.google.com/maps/search/?api=1&query=Virmenska+14+Lviv
+instagram: fornorosso.lviv
+pizzaOfTheWeek: lviv-forest
+pizzaOfTheWeekNote: The first porcini of the season just arrived from the Carpathians — this week they go on our signature Lviv Forest.
+hours:
+  monday:
+    closed: false
+    open: '12:00'
+    close: '22:00'
+  tuesday:
+    closed: false
+    open: '12:00'
+    close: '22:00'
+  wednesday:
+    closed: false
+    open: '12:00'
+    close: '22:00'
+  thursday:
+    closed: false
+    open: '12:00'
+    close: '22:00'
+  friday:
+    closed: false
+    open: '12:00'
+    close: '23:30'
+  saturday:
+    closed: false
+    open: '11:00'
+    close: '23:30'
+  sunday:
+    closed: false
+    open: '11:00'
+    close: '21:00'
+holidays:
+  - date: 2026-12-25
+    label: Christmas Day
+  - date: 2027-01-01
+    label: New Year's Day
+  - date: 2027-01-06
+    label: Staff holiday

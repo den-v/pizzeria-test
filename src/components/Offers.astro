@@ -1,0 +1,110 @@
+---
+// Special offers running today. Offers that have ended are left out; offers that
+// haven't started yet are rendered hidden and shown by the browser script on their
+// first day, so the block stays right between builds. If nothing is running, the
+// whole block is hidden.
+import { getCollection, getEntry } from 'astro:content';
+import { formatDate } from '../lib/site';
+import { isOfferRunning, isoDate, nowInLviv } from '../lib/time';
+
+const today = nowInLviv().date;
+const offers = await Promise.all(
+  (await getCollection('offers'))
+    .map((o) => ({ ...o.data, id: o.id, start: isoDate(o.data.startDate), end: isoDate(o.data.endDate) }))
+    .filter((o) => o.end >= today)
+    .sort((a, b) => a.start.localeCompare(b.start))
+    .map(async (o) => ({
+      ...o,
+      running: isOfferRunning(o.start, o.end, today),
+      pizzaEntry: o.pizza ? await getEntry(o.pizza) : undefined,
+    })),
+);
+const anyRunning = offers.some((o) => o.running);
+---
+
+{
+  offers.length > 0 && (
+    <section class="offers section" aria-labelledby="offers-title" data-offers hidden={!anyRunning}>
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">Right now</p>
+          <h2 id="offers-title">Special offers</h2>
+        </div>
+        <div class="grid">
+          {offers.map((o) => (
+            <article class="offer" data-start={o.start} data-end={o.end} hidden={!o.running}>
+              {o.badge && <p class="badge">{o.badge}</p>}
+              <h3>{o.title}</h3>
+              <p class="desc">{o.description}</p>
+              <p class="dates">
+                Until {formatDate(o.end)}
+              </p>
+              {o.pizzaEntry && (
+                <a class="link" href={`/menu/${o.pizzaEntry.id}/`}>
+                  See {o.pizzaEntry.data.name} →
+                </a>
+              )}
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .offers {
+    padding-block: var(--space-xl);
+  }
+  .grid {
+    display: grid;
+    gap: var(--space-m);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  }
+  .offer {
+    position: relative;
+    display: grid;
+    gap: var(--space-xs);
+    align-content: start;
+    padding: var(--space-l);
+    border-radius: var(--radius);
+    background: linear-gradient(135deg, var(--red) 0%, var(--red-deep) 100%);
+    color: #fff;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .offer[hidden] {
+    display: none;
+  }
+  .offer::after {
+    content: '';
+    position: absolute;
+    inset-inline-end: -3rem;
+    inset-block-start: -3rem;
+    inline-size: 10rem;
+    block-size: 10rem;
+    border-radius: 50%;
+    border: 18px solid rgb(255 255 255 / 0.08);
+  }
+  .badge {
+    font-family: var(--font-display);
+    font-size: 2.6rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--gold-soft);
+  }
+  .desc {
+    color: rgb(255 255 255 / 0.88);
+  }
+  .dates {
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgb(255 255 255 / 0.7);
+  }
+  .link {
+    color: #fff;
+    font-weight: 600;
+  }
+</style>

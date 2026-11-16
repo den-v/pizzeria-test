@@ -1,0 +1,51 @@
+---
+import { getInfo, hoursList } from '../lib/site';
+import { DAY_NAMES, nowInLviv } from '../lib/time';
+
+const info = await getInfo();
+const hours = hoursList(info);
+const today = nowInLviv().dayIndex;
+---
+
+<table class="hours">
+  <caption class="visually-hidden">Opening hours</caption>
+  <tbody>
+    {
+      hours.map((h, i) => (
+        <tr data-weekday={i} data-today={i === today ? '' : undefined}>
+          <th scope="row">{DAY_NAMES[i]}</th>
+          <td>{h.closed || !h.open ? 'Closed' : `${h.open} – ${h.close}`}</td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>
+
+<style>
+  .hours {
+    inline-size: 100%;
+    border-collapse: collapse;
+  }
+  th,
+  td {
+    padding: 0.55rem 0.75rem;
+    border-block-end: 1px dashed var(--line);
+    text-align: start;
+  }
+  th {
+    font-weight: 500;
+  }
+  td {
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+  }
+  tr[data-today] {
+    background: var(--gold-soft);
+    font-weight: 700;
+  }
+  tr[data-today] th::after {
+    content: ' · today';
+    font-weight: 400;
+    color: var(--muted);
+  }
+</style>

@@ -1,0 +1,100 @@
+---
+// Only reviews ticked "Approved" in the admin are shown.
+import { getCollection } from 'astro:content';
+import { formatDate } from '../lib/site';
+import { isoDate } from '../lib/time';
+
+const reviews = (await getCollection('reviews', ({ data }) => data.approved)).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+const average = reviews.length ? reviews.reduce((s, r) => s + r.data.rating, 0) / reviews.length : 0;
+const stars = (n: number) => '★'.repeat(n) + '☆'.repeat(5 - n);
+---
+
+{
+  reviews.length > 0 && (
+    <section class="reviews section" aria-labelledby="reviews-title">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">Guests say</p>
+          <h2 id="reviews-title">Kind words from our tables</h2>
+          <p>
+            <strong>{average.toFixed(1)} / 5</strong> from {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
+          </p>
+        </div>
+        <ul class="grid">
+          {reviews.map((r) => (
+            <li>
+              <figure class="review">
+                <p class="stars" aria-label={`${r.data.rating} out of 5 stars`}>
+                  {stars(r.data.rating)}
+                </p>
+                <blockquote>
+                  <p>{r.data.text}</p>
+                </blockquote>
+                <figcaption>
+                  <strong>{r.data.author}</strong>
+                  <time datetime={isoDate(r.data.date)}>
+                    {formatDate(isoDate(r.data.date), { month: 'long', year: 'numeric' })}
+                  </time>
+                </figcaption>
+              </figure>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .reviews {
+    background: var(--paper);
+    border-block: 1px solid var(--line);
+  }
+  .grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-m);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  }
+  .review {
+    margin: 0;
+    block-size: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+    padding: var(--space-l) var(--space-m) var(--space-m);
+    background: var(--cream);
+    border-radius: var(--radius);
+    position: relative;
+  }
+  .review::before {
+    content: '“';
+    position: absolute;
+    inset-block-start: -0.6rem;
+    inset-inline-end: 1rem;
+    font-family: var(--font-display);
+    font-size: 5rem;
+    line-height: 1;
+    color: var(--red);
+    opacity: 0.25;
+  }
+  .stars {
+    color: var(--gold);
+    letter-spacing: 0.1em;
+  }
+  blockquote {
+    margin: 0;
+    flex: 1;
+  }
+  figcaption {
+    display: grid;
+    font-size: 0.9rem;
+  }
+  time {
+    color: var(--muted);
+  }
+</style>

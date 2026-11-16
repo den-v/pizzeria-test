@@ -1,0 +1,120 @@
+---
+import { getEntry } from 'astro:content';
+import Base from '../layouts/Base.astro';
+
+const entry = await getEntry('history', 'history');
+if (!entry) throw new Error('Missing src/content/site/history.yaml');
+const { title, intro, milestones } = entry.data;
+const sorted = [...milestones].sort((a, b) => a.year - b.year);
+---
+
+<Base description={intro.slice(0, 155)}>
+  <header class="head">
+    <div class="container narrow">
+      <p class="eyebrow">Since {sorted[0]?.year ?? ''}</p>
+      <h1>{title}</h1>
+      <p class="intro">{intro}</p>
+    </div>
+  </header>
+
+  <section class="section" aria-label="Milestones">
+    <div class="container narrow">
+      <ol class="timeline">
+        {
+          sorted.map((m) => (
+            <li>
+              <p class="year">{m.year}</p>
+              <div class="card">
+                <h2>{m.title}</h2>
+                <p>{m.text}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+      <p class="cta">
+        <a class="button" href="/menu/">Taste the result</a>
+      </p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .narrow {
+    max-inline-size: 48rem;
+  }
+  .head {
+    padding-block: var(--space-xl) 0;
+  }
+  .head .container {
+    display: grid;
+    gap: var(--space-m);
+  }
+  h1 {
+    color: var(--red);
+  }
+  .intro {
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 2.4vw, 1.6rem);
+    line-height: 1.45;
+  }
+  .timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    display: grid;
+    gap: var(--space-l);
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    inset-block: 0.5rem;
+    inset-inline-start: 4.6rem;
+    border-inline-start: 2px dashed var(--line);
+  }
+  .timeline li {
+    display: grid;
+    grid-template-columns: 4rem 1fr;
+    gap: var(--space-l);
+    align-items: start;
+    position: relative;
+  }
+  .timeline li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: calc(4.6rem - 7px);
+    inset-block-start: 0.75rem;
+    inline-size: 16px;
+    block-size: 16px;
+    border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 0 4px var(--cream);
+  }
+  .year {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--red);
+    text-align: end;
+  }
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: var(--space-m) var(--space-l);
+    display: grid;
+    gap: var(--space-xs);
+    margin-inline-start: var(--space-s);
+  }
+  .card h2 {
+    font-size: 1.35rem;
+  }
+  .card p {
+    color: var(--muted);
+  }
+  .cta {
+    margin-block-start: var(--space-xl);
+    text-align: center;
+  }
+</style>

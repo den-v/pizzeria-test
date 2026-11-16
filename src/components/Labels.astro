@@ -1,0 +1,57 @@
+---
+import { LABEL_INFO } from '../lib/site';
+
+interface Props {
+  labels?: (keyof typeof LABEL_INFO)[];
+  soldOut?: boolean;
+}
+const { labels = [], soldOut = false } = Astro.props;
+---
+
+{
+  (labels.length > 0 || soldOut) && (
+    <ul class="labels" aria-label="Labels">
+      {soldOut && <li class="label label--soldout">Sold out</li>}
+      {labels.map((l) => (
+        <li class={`label label--${l}`}>
+          <span aria-hidden="true">{LABEL_INFO[l].icon}</span>
+          {' '}
+          {LABEL_INFO[l].text}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+<style>
+  .labels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: var(--gold-soft);
+    color: #7a4b0b;
+  }
+  .label--spicy {
+    background: var(--red-soft);
+    color: var(--red-deep);
+  }
+  .label--vegetarian {
+    background: var(--basil-soft);
+    color: var(--basil);
+  }
+  .label--soldout {
+    background: var(--ink);
+    color: #fff;
+    text-transform: uppercase;
+  }
+</style>

@@ -1,0 +1,17 @@
+name: Diavola
+category: classic
+order: 2
+description: Spicy salami crisped at the edges, mozzarella and fresh chilli on our slow-proved tomato base.
+price30: 235
+price40: 325
+ingredients:
+  - Tomato sauce
+  - Mozzarella
+  - Spicy salami
+  - Fresh red chilli
+  - Oregano
+photo: ../../assets/pizzas/diavola/photo.svg
+photoAlt: Diavola pizza covered with spicy salami and sliced chilli
+labels:
+  - spicy
+available: true

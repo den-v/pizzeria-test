@@ -1,0 +1,17 @@
+name: Karpatska
+category: signature
+order: 3
+description: A mountain-style pie with smoked homemade sausage, salty bryndza and sweet red onion.
+price30: 265
+price40: 365
+ingredients:
+  - Tomato sauce
+  - Mozzarella
+  - Smoked homemade sausage
+  - Bryndza cheese
+  - Red onion
+  - Dill
+photo: ../../assets/pizzas/karpatska/photo.svg
+photoAlt: Karpatska pizza with smoked sausage, bryndza and red onion
+labels: []
+available: false

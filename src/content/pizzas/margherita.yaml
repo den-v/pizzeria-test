@@ -1,0 +1,16 @@
+name: Margherita
+category: classic
+order: 1
+description: The pizza that started it all — San Marzano tomatoes, fior di latte and fresh basil, baked for ninety seconds in our wood-fired oven.
+price30: 195
+price40: 275
+ingredients:
+  - San Marzano tomato sauce
+  - Fior di latte mozzarella
+  - Fresh basil
+  - Extra virgin olive oil
+photo: ../../assets/pizzas/margherita/photo.svg
+photoAlt: Margherita pizza with melted mozzarella and basil leaves
+labels:
+  - vegetarian
+available: true

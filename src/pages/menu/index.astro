@@ -1,0 +1,131 @@
+---
+import Base from '../../layouts/Base.astro';
+import PizzaCard from '../../components/PizzaCard.astro';
+import { CATEGORY_INFO, getPizzas } from '../../lib/site';
+
+const pizzas = await getPizzas();
+const categories = (Object.keys(CATEGORY_INFO) as (keyof typeof CATEGORY_INFO)[])
+  .map((key) => ({ key, ...CATEGORY_INFO[key], items: pizzas.filter((p) => p.data.category === key) }))
+  .filter((c) => c.items.length > 0);
+---
+
+<Base title="Menu" description="All our wood-fired pizzas — classic, signature and white — with prices for 30 cm and 40 cm.">
+  <header class="page-head">
+    <div class="container">
+      <p class="eyebrow">Menu</p>
+      <h1>Our pizzas</h1>
+      <p class="lead">Every pizza comes in 30 cm and 40 cm. Our dough rests for 48 hours before it meets the fire.</p>
+      <nav aria-label="Menu categories">
+        <ul class="jump">
+          {
+            categories.map((c) => (
+              <li>
+                <a href={`#${c.key}`}>
+                  {c.title} <span>{c.items.length}</span>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  {
+    categories.map((c) => (
+      <section class="category" id={c.key} aria-labelledby={`${c.key}-title`}>
+        <div class="container">
+          <div class="cat-head">
+            <h2 id={`${c.key}-title`}>{c.title}</h2>
+            <p>{c.blurb}</p>
+          </div>
+          <ul class="grid">
+            {c.items.map((p) => (
+              <li>
+                <PizzaCard pizza={p} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    ))
+  }
+</Base>
+
+<style>
+  .page-head {
+    padding-block: var(--space-xl) var(--space-l);
+    text-align: center;
+  }
+  .page-head .container {
+    display: grid;
+    gap: var(--space-s);
+    justify-items: center;
+  }
+  .page-head h1 {
+    color: var(--red);
+  }
+  .lead {
+    max-inline-size: 36rem;
+    color: var(--muted);
+    font-size: 1.15rem;
+  }
+  .jump {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-xs);
+    list-style: none;
+    margin: var(--space-s) 0 0;
+    padding: 0;
+  }
+  .jump a {
+    display: inline-flex;
+    gap: 0.4rem;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .jump a:hover {
+    border-color: var(--red);
+  }
+  .jump span {
+    font-size: 0.75rem;
+    background: var(--red-soft);
+    color: var(--red-deep);
+    border-radius: 999px;
+    padding: 0 0.45rem;
+  }
+  .category {
+    padding-block: var(--space-xl);
+    scroll-margin-block-start: 4rem;
+  }
+  .cat-head {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-xs) var(--space-m);
+    margin-block-end: var(--space-l);
+    padding-block-end: var(--space-s);
+    border-block-end: 2px solid var(--ink);
+  }
+  .cat-head p {
+    color: var(--muted);
+  }
+  .grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-l);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+  }
+  .grid li {
+    display: grid;
+  }
+</style>

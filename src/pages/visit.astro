@@ -1,0 +1,122 @@
+---
+import Base from '../layouts/Base.astro';
+import OpenStatus from '../components/OpenStatus.astro';
+import HoursTable from '../components/HoursTable.astro';
+import Holidays from '../components/Holidays.astro';
+import { getInfo } from '../lib/site';
+
+const info = await getInfo();
+const tel = info.phone.replace(/[^+\d]/g, '');
+---
+
+<Base title="Visit us" description={`Opening hours, address and phone of ${info.name}: ${info.address}, ${info.city}.`}>
+  <section class="section">
+    <div class="container layout">
+      <div class="info">
+        <p class="eyebrow">Visit us</p>
+        <h1>Come hungry</h1>
+        <OpenStatus />
+        <dl class="contact">
+          <div>
+            <dt>Address</dt>
+            <dd>
+              <address>
+                {info.address}<br />{info.city}
+              </address>
+              <a href={info.mapUrl} target="_blank" rel="noopener">Open in maps ↗</a>
+            </dd>
+          </div>
+          <div>
+            <dt>Phone</dt>
+            <dd><a class="phone" href={`tel:${tel}`}>{info.phone}</a></dd>
+          </div>
+          {
+            info.email && (
+              <div>
+                <dt>Email</dt>
+                <dd>
+                  <a href={`mailto:${info.email}`}>{info.email}</a>
+                </dd>
+              </div>
+            )
+          }
+        </dl>
+        <div class="actions">
+          <a class="button" href={`tel:${tel}`}>Book a table</a>
+          <a class="button button--ghost" href={info.mapUrl} target="_blank" rel="noopener">Directions</a>
+        </div>
+      </div>
+      <div class="side">
+        <div class="hours-card">
+          <h2>Opening hours</h2>
+          <HoursTable />
+        </div>
+        <Holidays />
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .layout {
+    display: grid;
+    gap: var(--space-xl);
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+  .info,
+  .side {
+    display: grid;
+    gap: var(--space-m);
+  }
+  h1 {
+    color: var(--red);
+  }
+  .contact {
+    display: grid;
+    gap: var(--space-m);
+    margin: var(--space-s) 0 0;
+  }
+  dt {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  dd {
+    margin: 0;
+    font-size: 1.2rem;
+  }
+  address {
+    font-style: normal;
+  }
+  .phone {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+  }
+  .hours-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: var(--space-l);
+    box-shadow: var(--shadow);
+  }
+  .hours-card h2 {
+    font-size: 1.6rem;
+    margin-block-end: var(--space-s);
+  }
+  @media (max-width: 50rem) {
+    .layout {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

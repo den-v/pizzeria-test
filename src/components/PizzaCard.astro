@@ -1,0 +1,149 @@
+---
+import { Image } from 'astro:assets';
+import Labels from './Labels.astro';
+import { formatPrice, type Pizza } from '../lib/site';
+
+interface Props {
+  pizza: Pizza;
+  headingLevel?: 'h2' | 'h3';
+}
+const { pizza, headingLevel: Heading = 'h3' } = Astro.props;
+const { data } = pizza;
+const soldOut = !data.available;
+---
+
+<article class:list={['card', { 'is-soldout': soldOut }]}>
+  <div class="media">
+    <Image src={data.photo} alt={data.photoAlt || data.name} widths={[400, 700]} sizes="(max-width: 40rem) 100vw, 360px" />
+    {soldOut && <span class="ribbon">Sold out today</span>}
+  </div>
+  <div class="body">
+    <Labels labels={data.labels} />
+    <Heading class="title">
+      <a href={`/menu/${pizza.id}/`}>{data.name}</a>
+    </Heading>
+    <p class="desc">{data.description}</p>
+    <dl class="prices" aria-label="Prices">
+      <div>
+        <dt>30 cm</dt>
+        <dd>{formatPrice(data.price30)}</dd>
+      </div>
+      <div>
+        <dt>40 cm</dt>
+        <dd>{formatPrice(data.price40)}</dd>
+      </div>
+    </dl>
+    {soldOut && <p class="unavailable">Currently unavailable — back soon.</p>}
+  </div>
+</article>
+
+<style>
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform 0.25s, box-shadow 0.25s;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+  }
+  .card:focus-within {
+    outline: 3px solid var(--gold);
+    outline-offset: 2px;
+  }
+  .media {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--char);
+  }
+  .media img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+    transition: transform 0.5s;
+  }
+  .card:hover .media img {
+    transform: scale(1.04) rotate(2deg);
+  }
+  .is-soldout .media img {
+    filter: grayscale(0.85) brightness(0.8);
+  }
+  .ribbon {
+    position: absolute;
+    inset-block-start: var(--space-s);
+    inset-inline-start: var(--space-s);
+    background: var(--ink);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+  }
+  .body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    padding: var(--space-m);
+    flex: 1;
+  }
+  .title a {
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .title a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+  .title a:focus-visible {
+    outline: none;
+  }
+  .desc {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+  .prices {
+    display: flex;
+    gap: var(--space-m);
+    margin: auto 0 0;
+    padding-block-start: var(--space-s);
+    border-block-start: 1px dashed var(--line);
+  }
+  .prices div {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+  }
+  .prices dt {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .prices dd {
+    margin: 0;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+  .is-soldout .prices dd {
+    color: var(--muted);
+    text-decoration: line-through;
+  }
+  .unavailable {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--red-deep);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card,
+    .media img {
+      transition: none;
+    }
+  }
+</style>

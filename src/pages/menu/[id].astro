@@ -1,0 +1,252 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import Labels from '../../components/Labels.astro';
+import PizzaCard from '../../components/PizzaCard.astro';
+import { CATEGORY_INFO, formatPrice, getInfo, getPizzas, type Pizza } from '../../lib/site';
+
+export async function getStaticPaths() {
+  const pizzas = await getPizzas();
+  return pizzas.map((pizza) => ({
+    params: { id: pizza.id },
+    props: { pizza, related: pizzas.filter((p) => p.id !== pizza.id && p.data.category === pizza.data.category).slice(0, 3) },
+  }));
+}
+
+interface Props {
+  pizza: Pizza;
+  related: Pizza[];
+}
+const { pizza, related } = Astro.props;
+const { data } = pizza;
+const info = await getInfo();
+const isPotw = info.pizzaOfTheWeek?.id === pizza.id;
+const category = CATEGORY_INFO[data.category];
+const tel = info.phone.replace(/[^+\d]/g, '');
+---
+
+<Base title={data.name} description={data.description}>
+  <article class="pizza container">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="/menu/">Menu</a></li>
+        <li><a href={`/menu/#${data.category}`}>{category.title}</a></li>
+        <li aria-current="page">{data.name}</li>
+      </ol>
+    </nav>
+
+    <div class="layout">
+      <div class:list={['photo', { soldout: !data.available }]}>
+        <Image src={data.photo} alt={data.photoAlt || data.name} widths={[600, 1000, 1200]} sizes="(max-width: 52rem) 100vw, 600px" loading="eager" />
+        {isPotw && <span class="stamp">Pizza of the week</span>}
+      </div>
+
+      <div class="details">
+        <p class="eyebrow">{category.title}</p>
+        <h1>{data.name}</h1>
+        <Labels labels={data.labels} soldOut={!data.available} />
+        <p class="desc">{data.description}</p>
+
+        {
+          !data.available && (
+            <p class="soldout-note" role="note">
+              <strong>Sold out today.</strong> This pizza is temporarily unavailable — please ask us when it will be back.
+            </p>
+          )
+        }
+
+        <dl class="prices">
+          <div>
+            <dt>30 cm</dt>
+            <dd>{formatPrice(data.price30)}</dd>
+          </div>
+          <div>
+            <dt>40 cm</dt>
+            <dd>{formatPrice(data.price40)}</dd>
+          </div>
+        </dl>
+
+        {
+          data.ingredients.length > 0 && (
+            <div class="ingredients">
+              <h2>Ingredients</h2>
+              <ul>
+                {data.ingredients.map((i) => (
+                  <li>{i}</li>
+                ))}
+              </ul>
+            </div>
+          )
+        }
+
+        <div class="actions">
+          <a class="button" href={`tel:${tel}`}>Order by phone</a>
+          <a class="button button--ghost" href="/menu/">← Back to the menu</a>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  {
+    related.length > 0 && (
+      <section class="related section" aria-labelledby="related-title">
+        <div class="container">
+          <h2 id="related-title">More {category.title.toLowerCase()}</h2>
+          <ul class="grid">
+            {related.map((p) => (
+              <li>
+                <PizzaCard pizza={p} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    )
+  }
+</Base>
+
+<style>
+  .pizza {
+    padding-block: var(--space-l) var(--space-xl);
+  }
+  .crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    list-style: none;
+    margin: 0 0 var(--space-l);
+    padding: 0;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .crumbs li + li::before {
+    content: '/';
+    margin-inline-end: var(--space-xs);
+    color: var(--line);
+  }
+  .layout {
+    display: grid;
+    gap: var(--space-xl);
+    grid-template-columns: 1.1fr 1fr;
+    align-items: start;
+  }
+  .photo {
+    position: relative;
+    position: sticky;
+    inset-block-start: 5rem;
+  }
+  .photo img {
+    inline-size: 100%;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+  .soldout img {
+    filter: grayscale(0.85) brightness(0.8);
+  }
+  .stamp {
+    position: absolute;
+    inset-block-start: var(--space-m);
+    inset-inline-end: var(--space-m);
+    background: var(--gold);
+    color: var(--char);
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+  }
+  .details {
+    display: grid;
+    gap: var(--space-m);
+  }
+  .details h1 {
+    color: var(--red);
+  }
+  .desc {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    line-height: 1.45;
+  }
+  .soldout-note {
+    padding: var(--space-m);
+    border-radius: var(--radius-s);
+    background: var(--ink);
+    color: #fff;
+  }
+  .prices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-s);
+    margin: 0;
+  }
+  .prices div {
+    padding: var(--space-m);
+    border-radius: var(--radius-s);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    text-align: center;
+  }
+  .prices dt {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .prices dd {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 700;
+  }
+  .soldout ~ .details .prices dd {
+    color: var(--muted);
+  }
+  .ingredients h2 {
+    font-size: 1.3rem;
+    margin-block-end: var(--space-xs);
+  }
+  .ingredients ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .ingredients li {
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    background: var(--gold-soft);
+    font-size: 0.95rem;
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+  }
+  @media (max-width: 52rem) {
+    .layout {
+      grid-template-columns: 1fr;
+    }
+    .photo {
+      position: relative;
+      inset-block-start: 0;
+    }
+  }
+  .related {
+    background: var(--paper);
+    border-block-start: 1px solid var(--line);
+    padding-block: var(--space-xl);
+  }
+  .related h2 {
+    margin-block-end: var(--space-l);
+  }
+  .grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-l);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+  }
+  .grid li {
+    display: grid;
+  }
+</style>

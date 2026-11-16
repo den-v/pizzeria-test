@@ -1,0 +1,26 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Page not found">
+  <section class="section">
+    <div class="container lost">
+      <p class="eyebrow">404</p>
+      <h1>This slice has gone missing</h1>
+      <p>The page you are looking for isn't on the menu.</p>
+      <a class="button" href="/menu/">See the menu</a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .lost {
+    display: grid;
+    gap: var(--space-m);
+    justify-items: center;
+    text-align: center;
+  }
+  h1 {
+    color: var(--red);
+  }
+</style>

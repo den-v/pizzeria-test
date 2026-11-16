@@ -1,0 +1,19 @@
+name: Pear & Gorgonzola
+category: white
+order: 2
+description: Thin slices of ripe pear, gorgonzola and toasted walnuts with a swirl of honey — sweet, salty and crunchy.
+price30: 275
+price40: 375
+ingredients:
+  - Cream base
+  - Mozzarella
+  - Pear
+  - Gorgonzola dolce
+  - Toasted walnuts
+  - Honey
+photo: ../../assets/pizzas/pear-gorgonzola/photo.svg
+photoAlt: White pizza with pear slices, gorgonzola, walnuts and honey
+labels:
+  - vegetarian
+  - new
+available: true

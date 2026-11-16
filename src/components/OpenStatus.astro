@@ -1,0 +1,74 @@
+---
+// "Open now / closed" badge. Rendered on the server, then kept current in the
+// browser by the script in Base.astro (Lviv time).
+import { getInfo, hoursList, holidayList } from '../lib/site';
+import { nowInLviv, openStatus } from '../lib/time';
+
+interface Props {
+  compact?: boolean;
+}
+const { compact = false } = Astro.props;
+const info = await getInfo();
+const status = openStatus(hoursList(info), holidayList(info), nowInLviv());
+---
+
+<p class:list={['status', { compact }]} data-open-status data-open={String(status.open)}>
+  <span class="dot" aria-hidden="true"></span>
+  <span data-headline>{status.headline}</span>
+  {' '}
+  <span class="detail" data-detail>{status.detail}</span>
+</p>
+
+<style>
+  .status {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4em;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background: var(--red-soft);
+    color: var(--red-deep);
+    inline-size: fit-content;
+  }
+  .status[data-open='true'] {
+    background: var(--basil-soft);
+    color: var(--basil);
+  }
+  .dot {
+    inline-size: 0.55rem;
+    block-size: 0.55rem;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .status[data-open='true'] .dot {
+    box-shadow: 0 0 0 0 currentColor;
+    animation: pulse 2s infinite;
+  }
+  .detail {
+    font-weight: 400;
+  }
+  .compact {
+    font-size: 0.82rem;
+  }
+  @media (max-width: 30rem) {
+    .compact .detail {
+      display: none;
+    }
+  }
+  @keyframes pulse {
+    70% {
+      box-shadow: 0 0 0 0.45rem transparent;
+    }
+    100% {
+      box-shadow: 0 0 0 0 transparent;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .status[data-open='true'] .dot {
+      animation: none;
+    }
+  }
+</style>

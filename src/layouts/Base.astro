@@ -1,0 +1,306 @@
+---
+import { Font } from 'astro:assets';
+import '../styles/global.css';
+import OpenStatus from '../components/OpenStatus.astro';
+import { getInfo, hoursList, holidayList } from '../lib/site';
+
+interface Props {
+  title?: string;
+  description?: string;
+  lang?: string;
+}
+
+const info = await getInfo();
+const { title, description = `${info.name} — ${info.tagline}. ${info.address}, ${info.city}.`, lang = 'en' } = Astro.props;
+const pageTitle = title ? `${title} · ${info.name}` : `${info.name} — ${info.tagline}`;
+const path = Astro.url.pathname;
+const nav = [
+  { href: '/menu/', label: 'Menu' },
+  { href: '/our-story/', label: 'Our story' },
+  { href: '/visit/', label: 'Visit us' },
+];
+const tel = info.phone.replace(/[^+\d]/g, '');
+const liveData = JSON.stringify({ hours: hoursList(info), holidays: holidayList(info) });
+---
+
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght,SOFT,WONK@9..144,500..700,50,1&display=swap"
+    />
+    <Font cssVariable="--font-mulish" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="/" aria-label={`${info.name} — home`}>
+          <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
+            <circle cx="20" cy="20" r="19" fill="#b3301c"></circle>
+            <path d="M20 8c4 5 8 9 8 15a8 8 0 0 1-16 0c0-3 1.5-5 3-6.5.3 2.5 1.5 4 3 4.5-1-4 .5-9 2-13z" fill="#fbe9c8"></path>
+          </svg>
+          <span>{info.name}</span>
+        </a>
+        <nav aria-label="Main">
+          <ul class="nav">
+            {
+              nav.map((item) => (
+                <li>
+                  <a href={item.href} aria-current={path.startsWith(item.href) ? 'page' : undefined}>
+                    {item.label}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+        <div class="header-status">
+          <OpenStatus compact />
+        </div>
+      </div>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-grid">
+        <div class="footer-brand">
+          <p class="footer-name">{info.name}</p>
+          <p>{info.tagline}</p>
+          <OpenStatus />
+        </div>
+        <div>
+          <h2 class="footer-title">Find us</h2>
+          <address>
+            {info.address}<br />{info.city}
+          </address>
+          <a href={info.mapUrl} target="_blank" rel="noopener">Open in maps ↗</a>
+        </div>
+        <div>
+          <h2 class="footer-title">Get in touch</h2>
+          <p><a href={`tel:${tel}`}>{info.phone}</a></p>
+          {info.email && <p><a href={`mailto:${info.email}`}>{info.email}</a></p>}
+          {
+            info.instagram && (
+              <p>
+                <a href={`https://instagram.com/${info.instagram}`} target="_blank" rel="noopener">
+                  @{info.instagram}
+                </a>
+              </p>
+            )
+          }
+        </div>
+        <div>
+          <h2 class="footer-title">Explore</h2>
+          <ul class="footer-links">
+            {
+              nav.map((item) => (
+                <li>
+                  <a href={item.href}>{item.label}</a>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </div>
+      <div class="container footer-bottom">
+        <p>© {new Date().getFullYear()} {info.name}, Lviv</p>
+      </div>
+    </footer>
+
+    <script is:inline type="application/json" id="live-data" set:html={liveData}></script>
+    <script>
+      import { isOfferRunning, nowInLviv, openStatus, type DayHours, type Holiday } from '../lib/time';
+
+      const raw = document.getElementById('live-data')?.textContent;
+      const data: { hours: DayHours[]; holidays: Holiday[] } | null = raw ? JSON.parse(raw) : null;
+
+      function refresh() {
+        const now = nowInLviv();
+
+        if (data) {
+          const status = openStatus(data.hours, data.holidays, now);
+          document.querySelectorAll<HTMLElement>('[data-open-status]').forEach((el) => {
+            el.dataset.open = String(status.open);
+            const headline = el.querySelector('[data-headline]');
+            const detail = el.querySelector('[data-detail]');
+            if (headline) headline.textContent = status.headline;
+            if (detail) detail.textContent = status.detail;
+          });
+        }
+
+        document.querySelectorAll<HTMLElement>('[data-weekday]').forEach((el) => {
+          el.toggleAttribute('data-today', Number(el.dataset.weekday) === now.dayIndex);
+        });
+
+        document.querySelectorAll<HTMLElement>('[data-holiday-date]').forEach((el) => {
+          el.hidden = (el.dataset.holidayDate ?? '') < now.date;
+        });
+        document.querySelectorAll<HTMLElement>('[data-holiday-list]').forEach((list) => {
+          list.hidden = !list.querySelector('[data-holiday-date]:not([hidden])');
+        });
+
+        document.querySelectorAll<HTMLElement>('[data-offers]').forEach((block) => {
+          let any = false;
+          block.querySelectorAll<HTMLElement>('[data-start]').forEach((offer) => {
+            const running = isOfferRunning(offer.dataset.start ?? '', offer.dataset.end ?? '', now.date);
+            offer.hidden = !running;
+            any ||= running;
+          });
+          block.hidden = !any;
+        });
+      }
+
+      refresh();
+      setInterval(refresh, 60_000);
+    </script>
+  </body>
+</html>
+
+<style>
+  .skip {
+    position: absolute;
+    inset-inline-start: var(--space-s);
+    inset-block-start: -4rem;
+    background: var(--ink);
+    color: #fff;
+    padding: var(--space-xs) var(--space-m);
+    border-radius: var(--radius-s);
+    z-index: 10;
+  }
+  .skip:focus {
+    inset-block-start: var(--space-s);
+  }
+
+  .site-header {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 5;
+    background: rgb(251 243 230 / 0.92);
+    backdrop-filter: blur(8px);
+    border-block-end: 1px solid var(--line);
+  }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-l);
+    padding-block: var(--space-s);
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-family: var(--font-display);
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .brand-mark {
+    inline-size: 2.2rem;
+    block-size: 2.2rem;
+  }
+  .nav {
+    display: flex;
+    gap: var(--space-m);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .nav a {
+    color: var(--ink);
+    font-weight: 500;
+    text-decoration: none;
+    padding-block: var(--space-2xs);
+    border-block-end: 2px solid transparent;
+  }
+  .nav a:hover,
+  .nav a[aria-current='page'] {
+    border-block-end-color: var(--red);
+  }
+  .header-status {
+    margin-inline-start: auto;
+  }
+
+  @media (max-width: 46rem) {
+    .header-inner {
+      flex-wrap: wrap;
+      gap: var(--space-xs) var(--space-m);
+    }
+    nav {
+      order: 3;
+      inline-size: 100%;
+    }
+    .nav {
+      gap: var(--space-m);
+      font-size: 0.95rem;
+    }
+  }
+
+  .site-footer {
+    background: var(--char);
+    color: #e9dccb;
+    padding-block: var(--space-xl) var(--space-l);
+    margin-block-start: var(--space-xl);
+  }
+  .site-footer a {
+    color: #f6c9a8;
+  }
+  .site-footer a:hover {
+    color: #fff;
+  }
+  .footer-grid {
+    display: grid;
+    gap: var(--space-l);
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  }
+  .footer-brand {
+    display: grid;
+    gap: var(--space-xs);
+    align-content: start;
+  }
+  .footer-name {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #fff;
+  }
+  .footer-title {
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #b9a593;
+    margin-block-end: var(--space-xs);
+  }
+  address {
+    font-style: normal;
+    margin-block-end: var(--space-xs);
+  }
+  .footer-links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-2xs);
+  }
+  .footer-bottom {
+    border-block-start: 1px solid rgb(255 255 255 / 0.1);
+    margin-block-start: var(--space-l);
+    padding-block-start: var(--space-m);
+    font-size: 0.875rem;
+    color: #a8917e;
+  }
+</style>
