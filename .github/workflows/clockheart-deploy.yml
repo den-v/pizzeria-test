@@ -1,127 +1,49 @@
 # clockheart-workflow: 8
-# Written by Clockheart. On every change to main (a Publish, or a client's
-# save in Pages CMS) or to preview (a Publish to preview), GitHub builds
-# the site and puts it where the repo variable CLOCKHEART_HOST says:
-#   github-pages · cloudflare · sftp (your own host) · netlify · vercel
-# Logins are repo secrets (Settings → Secrets and variables → Actions).
+# Written by Clockheart. A Keystatic site with its admin on the live site runs on
+# Cloudflare: on every change to main (a Publish, or a save in the live
+# admin), GitHub builds it for Cloudflare and deploys the Worker. Logins and the
+# admin's GitHub App keys are repo secrets; its name is the variable PUBLIC_KEYSTATIC_GITHUB_APP_SLUG.
 name: Build and publish
 on:
   push:
-    branches: [main, preview]
+    branches: [main]
   workflow_dispatch:
 concurrency:
-  group: publish-${{ github.ref_name }}
+  group: publish
   cancel-in-progress: true
 permissions:
   contents: read
-  pages: write
-  id-token: write
-  actions: write
 jobs:
   build:
-    # Nothing to build for until the user has chosen where the site lives:
-    # a new site never starts with a failed build.
-    if: ${{ vars.CLOCKHEART_HOST != '' }}
+    if: ${{ vars.CLOCKHEART_HOST == 'cloudflare' }}
     runs-on: ubuntu-latest
     env:
-      HOST: ${{ vars.CLOCKHEART_HOST }}
-      SITE_URL: ${{ vars.CLOCKHEART_SITE_URL }}
-      PREVIEW: ${{ github.ref_name == 'preview' && '1' || '' }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-      NETLIFY_SITE_ID: ${{ vars.NETLIFY_SITE_ID }}
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
-      VERCEL_PREVIEW_ALIAS: ${{ vars.VERCEL_PREVIEW_ALIAS }}
-      SFTP_HOST: ${{ secrets.SFTP_HOST }}
-      SFTP_USER: ${{ secrets.SFTP_USER }}
-      LFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
-      SFTP_PORT: ${{ vars.SFTP_PORT }}
-      SFTP_PATH: ${{ vars.SFTP_PATH }}
+      PUBLIC_KEYSTATIC_GITHUB_APP_SLUG: ${{ vars.PUBLIC_KEYSTATIC_GITHUB_APP_SLUG }}
+      KEYSTATIC_GITHUB_CLIENT_ID: ${{ secrets.KEYSTATIC_GITHUB_CLIENT_ID }}
+      KEYSTATIC_GITHUB_CLIENT_SECRET: ${{ secrets.KEYSTATIC_GITHUB_CLIENT_SECRET }}
+      KEYSTATIC_SECRET: ${{ secrets.KEYSTATIC_SECRET }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-      - id: pages
-        if: ${{ vars.CLOCKHEART_HOST == 'github-pages' && github.ref_name == 'main' }}
-        uses: actions/configure-pages@v5
-      - name: Build
-        env:
-          PAGES_ORIGIN: ${{ steps.pages.outputs.origin }}
-          PAGES_BASE: ${{ steps.pages.outputs.base_path }}
-          GH_TOKEN: ${{ github.token }}
+      - name: Build for Cloudflare
+        run: npm ci && CLOCKHEART_TARGET=cloudflare npx astro build
+      - name: Put it live on Cloudflare
         run: |
           set -e
-          # One build of one branch into a folder, under a base path (the site's
-          # sub-folder: GitHub Pages' /<repo>, or /preview).
-          # Each branch is built in its own folder OUTSIDE the checkout: inside
-          # it, the build would pick up the outer project's tsconfig.
-          build_ref() {
-            SRC="$(mktemp -d)/src"
-            git worktree add -f "$SRC" "origin/$1" >/dev/null
-            (cd "$SRC" && npm ci && npx astro build $2 --base "${3:-/}" && node .github/clockheart-base.mjs dist "$3")
-            mkdir -p "$4" && cp -R "$SRC/dist/." "$4"/ && touch "$4/.clockheart-site"
-            git worktree remove -f "$SRC"
-          }
-          if [ "$HOST" = "github-pages" ] && [ -n "$PREVIEW" ]; then
-            # GitHub Pages deploys only from main: a preview push asks
-            # main to rebuild — and that build includes the preview.
-            gh workflow run clockheart-deploy.yml --ref main
-            echo "Asked main to rebuild with the preview." && exit 0
-          elif [ "$HOST" = "github-pages" ]; then
-            # GitHub Pages holds one site per repo: the live site at its root,
-            # the preview (when there is one) under /preview/.
-            build_ref main "--site $PAGES_ORIGIN" "$PAGES_BASE" site
-            if git rev-parse -q --verify origin/preview >/dev/null; then
-              build_ref preview "--site $PAGES_ORIGIN" "$PAGES_BASE/preview" site/preview
-            fi
-          else
-            BASE=""
-            if [ -n "$SITE_URL" ]; then BASE=$(node -e 'console.log(new URL(process.argv[1]).pathname.replace(/\/+$/, ""))' "$SITE_URL"); fi
-            if [ -n "$PREVIEW" ] && [ "$HOST" = "sftp" ]; then BASE="$BASE/preview"; fi
-            build_ref "$GITHUB_REF_NAME" "${SITE_URL:+--site $SITE_URL}" "$BASE" site
+          # Cloudflare sometimes asks to slow down (code 971, "wait N seconds"): wait and try again.
+          for try in 1 2 3; do
+            if npx wrangler deploy --message "$GITHUB_SHA" 2>&1 | tee deploy.log; [ "${PIPESTATUS[0]}" = 0 ]; then break; fi
+            if [ "$try" = 3 ] || ! grep -q "code: 971" deploy.log; then exit 1; fi
+            echo "Cloudflare asked to wait — trying again in a minute."; sleep 60
+          done
+          # The live admin's keys (its GitHub App), once it has one.
+          if [ -n "$KEYSTATIC_GITHUB_CLIENT_ID" ]; then
+            node -e 'const k=["KEYSTATIC_GITHUB_CLIENT_ID","KEYSTATIC_GITHUB_CLIENT_SECRET","KEYSTATIC_SECRET"];const o={};for(const n of k)o[n]=process.env[n]||"";process.stdout.write(JSON.stringify(o))' > "$RUNNER_TEMP/ks.json"
+            npx wrangler secret bulk "$RUNNER_TEMP/ks.json" >/dev/null
+            rm -f "$RUNNER_TEMP/ks.json"
           fi
-      - if: ${{ vars.CLOCKHEART_HOST == 'github-pages' && github.ref_name == 'main' }}
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
-      - name: Put it live on Cloudflare
-        if: ${{ (vars.CLOCKHEART_HOST == 'cloudflare' || vars.CLOCKHEART_HOST == '') && env.CLOUDFLARE_API_TOKEN != '' }}
-        run: |
-          npx --yes wrangler@4 deploy ./site --name "pizzeria-test${PREVIEW:+-preview}" --compatibility-date 2026-11-16 --message "$GITHUB_SHA"
-      - name: Put it live on your host (SFTP)
-        if: ${{ vars.CLOCKHEART_HOST == 'sftp' }}
-        run: |
-          sudo apt-get -qq update >/dev/null && sudo apt-get -qq install -y lftp >/dev/null
-          # The live upload never deletes the preview folder; a preview goes only into it.
-          TARGET="$SFTP_PATH"; KEEP="--exclude-glob preview/"
-          if [ -n "$PREVIEW" ]; then TARGET="${SFTP_PATH%/}/preview"; KEEP=""; fi
-          lftp -c "set sftp:auto-confirm yes; set net:max-retries 2; open -u \"$SFTP_USER\" --env-password \"sftp://$SFTP_HOST:${SFTP_PORT:-22}\"; mirror -R --delete --parallel=4 $KEEP site \"$TARGET\""
-      - name: Put it live on Netlify
-        if: ${{ vars.CLOCKHEART_HOST == 'netlify' }}
-        run: |
-          if [ -n "$PREVIEW" ]; then npx --yes netlify-cli@17 deploy --dir site --site "$NETLIFY_SITE_ID" --alias preview
-          else npx --yes netlify-cli@17 deploy --dir site --site "$NETLIFY_SITE_ID" --prod; fi
-      - name: Put it live on Vercel
-        if: ${{ vars.CLOCKHEART_HOST == 'vercel' }}
-        run: |
-          if [ -n "$PREVIEW" ]; then
-            URL=$(npx --yes vercel@39 deploy site --yes --token "$VERCEL_TOKEN")
-            npx --yes vercel@39 alias set "$URL" "$VERCEL_PREVIEW_ALIAS" --token "$VERCEL_TOKEN"
-          else npx --yes vercel@39 deploy site --prod --yes --token "$VERCEL_TOKEN"; fi
-  pages:
-    if: ${{ vars.CLOCKHEART_HOST == 'github-pages' && github.ref_name == 'main' }}
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4

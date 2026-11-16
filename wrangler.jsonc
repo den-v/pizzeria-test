@@ -1,0 +1,7 @@
+// Written by Clockheart: how Cloudflare runs the live site and its Keystatic admin.
+{
+  "name": "pizzeria-test",
+  "compatibility_date": "2026-11-16",
+  "compatibility_flags": ["nodejs_compat"],
+  "kv_namespaces": [{ "binding": "SESSION", "id": "ae78a35234564c38bac016c653e909ba" }]
+}

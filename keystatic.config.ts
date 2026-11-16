@@ -16,7 +16,8 @@ const dayHours = (label: string) =>
   );
 
 export default config({
-  storage: { kind: 'local' },
+  // On the live site, the admin saves to GitHub; here, to this computer's files (Clockheart).
+  storage: import.meta.env.PUBLIC_KEYSTATIC_GITHUB_APP_SLUG ? { kind: 'github', repo: 'den-v/pizzeria-test' } : { kind: 'local' },
   ui: {
     brand: { name: 'Forno Rosso' },
     navigation: {
